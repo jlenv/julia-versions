@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+[ -n "$JLENV_DEBUG" ] && set -x
 
 if [[ ! $# -eq 2 ]]; then
 	echo "usage: $0 [julia] [VERSION]"
@@ -48,17 +49,36 @@ for ext in "${exts[@]}"; do
 	else
 		wget -O "$archive" "$url"
 	fi
+	if [ -f "${archive}.asc" ]; then
+		echo "Already downloaded ${archive}.asc"
+	else
+		wget -O "${archive}.asc" "${url}.asc"
+	fi
+	if [ -f "$archive_full" ]; then
+		echo "Already downloaded $archive_full"
+	else
+		wget -O "$archive_full" "$url_full"
+	fi
+	if [ -f "${archive_full}.asc" ]; then
+		echo "Already downloaded ${archive_full}.asc"
+	else
+		wget -O "${archive_full}.asc" "${url_full}.asc"
+	fi
 
 	for algorithm in gpg; do
 		echo "1  $archive" >> "../$julia/signatures.$algorithm"
 		echo "1  $archive_full" >> "../$julia/signatures.$algorithm"
+		mv "${archive}.asc" "../julia/signatures/${archive}.asc"
+		mv "${archive_full}.asc" "../julia/signatures/${archive_full}.asc"
 	done
 done
 
 echo "$version" >> "../$julia/versions.txt"
 
-if [[ $(wc -l < "../$julia/stable.txt") == "1" ]]; then
-	echo "$version" > "../$julia/stable.txt"
-fi
+echo '=========================================================='
+echo '='
+echo '= Please manually update stable.txt'
+echo '='
+echo '=========================================================='
 
 popd >/dev/null
